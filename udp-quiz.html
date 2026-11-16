@@ -1,0 +1,547 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>UDP Sockets Quiz · Network Programming</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Practice quiz for Network Programming (UTM), Lecture 6: UDP sockets.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a course header, sticky tab bar (Practice / Mock midterm / Definitions); practice = filter rail + one question card + navigator grid; echoes the lecture slides' ink-and-lime look. */
+:root {
+  --bg: #f4f5ef;
+  --surface: #ffffff;
+  --ink: #141611;
+  --muted: #5d6258;
+  --line: #dadecf;
+  --accent: #556400;
+  --hi: #e1f33c;
+  --hi-ink: #141611;
+  --teal: #0b766e;
+  --teal-soft: #e0f1ee;
+  --code: #eef0e7;
+  --ok: #1e7a3d;
+  --ok-soft: #e1f2e5;
+  --bad: #b3302a;
+  --bad-soft: #fbe6e3;
+  --display: "Archivo", "Arial Black", system-ui, sans-serif;
+  --body: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0c0d0b; --surface: #161814; --ink: #edf0e6; --muted: #9ba193; --line: #2b2e27;
+  --accent: #d7ec30; --hi: #d7ec30; --hi-ink: #0c0d0b; --teal: #43d6c6; --teal-soft: #11302c; --code: #1d2019;
+  --ok: #62d08c; --ok-soft: #11301c; --bad: #f2877c; --bad-soft: #3a1915; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0c0d0b; --surface: #161814; --ink: #edf0e6; --muted: #9ba193; --line: #2b2e27;
+  --accent: #d7ec30; --hi: #d7ec30; --hi-ink: #0c0d0b; --teal: #43d6c6; --teal-soft: #11302c; --code: #1d2019;
+  --ok: #62d08c; --ok-soft: #11301c; --bad: #f2877c; --bad-soft: #3a1915; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 16px/1.55 var(--body); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 20; background: var(--surface); }
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+code { font: 0.86em var(--mono); background: var(--code); padding: 0.06em 0.34em; border-radius: 4px; overflow-wrap: anywhere; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+/* header */
+header.top { padding-block: 36px 22px; }
+.kicker { font: 600 12px/1 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.dots { display: inline-grid; grid-template-columns: repeat(3, 4px); gap: 3px; }
+.dots i { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); }
+h1 { font: 800 clamp(32px, 6.4vw, 58px)/1 var(--display); letter-spacing: -0.02em; margin: 12px 0 14px; text-wrap: balance; }
+h1 mark { background: var(--hi); color: var(--hi-ink); padding: 0 0.12em; border-radius: 3px; }
+.lede { max-width: 64ch; color: var(--muted); margin: 0; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 18px; font: 600 13px/1.2 var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.facts b { color: var(--ink); font-size: 15px; }
+
+/* tabs */
+nav.tabs { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); border-block: 1px solid var(--line); }
+nav.tabs .wrap { display: flex; gap: 4px; align-items: stretch; overflow-x: auto; }
+nav.tabs a { font: 700 15px/1 var(--display); text-decoration: none; color: var(--muted); padding: 15px 14px 13px; border-bottom: 3px solid transparent; white-space: nowrap; }
+nav.tabs a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--accent); }
+nav.tabs a:hover { color: var(--ink); }
+nav.tabs .spacer { flex: 1; }
+nav.tabs .score { align-self: center; font: 600 12.5px/1 var(--mono); color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+nav.tabs .score b { color: var(--ink); }
+
+main { padding-block: 26px 60px; }
+.view[hidden] { display: none; }
+
+/* shared controls */
+.label { font: 600 11px/1 var(--mono); letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 12px; font-size: 14px; line-height: 1.2; text-align: left; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.chip small { font: 600 11px var(--mono); opacity: 0.7; margin-left: 4px; }
+.btn { border: 1px solid var(--line); background: var(--surface); padding: 9px 15px; border-radius: 8px; font-weight: 700; font-size: 15px; }
+.btn:hover:not(:disabled) { border-color: var(--ink); }
+.btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.btn.lime { background: var(--hi); color: var(--hi-ink); border-color: var(--hi); }
+.btn:disabled { opacity: 0.45; cursor: default; }
+.btn.small { padding: 6px 11px; font-size: 13.5px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
+
+/* practice layout */
+.practice { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 22px; align-items: start; }
+.rail { display: grid; gap: 18px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 66px); }
+.rail .panel { display: grid; gap: 18px; }
+.lecstat { display: grid; gap: 10px; }
+.ls { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; font-size: 13.5px; }
+.ls .n { font: 700 13px var(--mono); color: var(--accent); }
+.ls .t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ls .v { font: 600 12px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.ls .bar { grid-column: 2 / 4; height: 5px; border-radius: 3px; background: var(--line); overflow: hidden; display: flex; }
+.ls .bar i { display: block; height: 100%; }
+.ls .bar .g { background: var(--ok); }
+.ls .bar .r { background: var(--bad); }
+.hint { font-size: 13px; color: var(--muted); margin: 0; }
+.kbd { font: 600 11.5px var(--mono); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; background: var(--surface); }
+
+.qcard { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 22px; }
+.qmeta { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin-bottom: 12px; font: 600 12.5px/1.2 var(--mono); color: var(--muted); }
+.qmeta .id { color: var(--ink); }
+.tag { display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 5px; background: var(--code); color: var(--ink); font: 600 11.5px/1.3 var(--mono); }
+.tag.prev { background: var(--hi); color: var(--hi-ink); }
+.tag.tf { background: var(--teal-soft); color: var(--teal); }
+.qtext { font-size: 19px; line-height: 1.45; margin: 0 0 14px; max-width: 70ch; text-wrap: pretty; }
+pre.code { margin: 0 0 16px; padding: 13px 15px; background: var(--code); border-radius: 9px; overflow-x: auto; font: 13.5px/1.55 var(--mono); border-left: 3px solid var(--accent); }
+.opts { display: grid; gap: 8px; }
+.opt { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; align-items: start; width: 100%; text-align: left; padding: 11px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); font-size: 16px; transition: border-color .12s, background .12s; }
+.opt:hover:not(:disabled) { border-color: var(--ink); }
+.opt .k { font: 700 13px/1.6 var(--mono); color: var(--muted); }
+.opt .t { min-width: 0; }
+.opt:disabled { cursor: default; }
+.opt.right { border-color: var(--ok); background: var(--ok-soft); }
+.opt.right .k { color: var(--ok); }
+.opt.wrong { border-color: var(--bad); background: var(--bad-soft); }
+.opt.wrong .k { color: var(--bad); }
+.opt.picked { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.opts.tf { grid-template-columns: repeat(2, minmax(0, 160px)); }
+.opts.tf .opt { grid-template-columns: 22px minmax(0, 1fr); font-weight: 700; }
+
+.verdict { margin-top: 14px; padding: 12px 14px; border-radius: 10px; font-size: 15.5px; max-width: 72ch; }
+.verdict.ok { background: var(--ok-soft); }
+.verdict.bad { background: var(--bad-soft); }
+.verdict strong { display: block; margin-bottom: 2px; }
+.verdict.ok strong { color: var(--ok); }
+.verdict.bad strong { color: var(--bad); }
+.ref { margin-top: 12px; border-top: 1px dashed var(--line); padding-top: 12px; display: grid; gap: 8px; max-width: 72ch; }
+.ref .src { font: 600 12px/1.3 var(--mono); color: var(--teal); }
+.def { font-size: 14.5px; padding-left: 12px; border-left: 3px solid var(--teal); }
+.def b { font-family: var(--display); font-weight: 700; }
+.qnav { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 18px; }
+.qnav .pos { margin-left: auto; font: 600 13px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.grid-nav { margin-top: 18px; }
+.grid-nav .cells { display: grid; grid-template-columns: repeat(auto-fill, minmax(34px, 1fr)); gap: 5px; }
+.cell { height: 32px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); font: 600 11.5px var(--mono); color: var(--muted); padding: 0; font-variant-numeric: tabular-nums; }
+.cell.ok { background: var(--ok); border-color: var(--ok); color: var(--surface); }
+.cell.bad { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+.cell.cur { outline: 2px solid var(--ink); outline-offset: 1px; }
+.cell.p { border-color: var(--accent); border-width: 2px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--muted); margin-top: 10px; align-items: center; }
+.legend span { display: inline-flex; gap: 6px; align-items: center; }
+.legend i { width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--line); display: inline-block; }
+.empty { padding: 30px; text-align: center; color: var(--muted); }
+.confirm { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; font-size: 14px; padding: 10px 12px; background: var(--bad-soft); border-radius: 8px; }
+
+/* mock */
+.setup { display: grid; gap: 20px; max-width: 760px; }
+.setup h2, .res h2 { font: 800 28px/1.1 var(--display); margin: 0; letter-spacing: -0.01em; }
+.setup p.intro { margin: 6px 0 0; color: var(--muted); max-width: 62ch; }
+.mockbar { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 48px); z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); padding-block: 10px; margin-bottom: 16px; display: flex; gap: 10px 18px; align-items: center; flex-wrap: wrap; }
+.mockbar .timer { font: 700 20px/1 var(--mono); font-variant-numeric: tabular-nums; }
+.mockbar .timer.low { color: var(--bad); }
+.mockbar .prog { font: 600 13px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.mockbar .grow { flex: 1; }
+.mock-list { display: grid; gap: 14px; max-width: 860px; }
+.sect { font: 800 20px/1.1 var(--display); margin: 14px 0 0; display: flex; gap: 10px; align-items: baseline; }
+.sect span { font: 700 13px var(--mono); color: var(--accent); }
+.res { display: grid; gap: 18px; max-width: 860px; }
+.bignum { font: 800 64px/1 var(--display); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.bignum small { font: 600 20px var(--mono); color: var(--muted); letter-spacing: 0; }
+.res-head { display: flex; flex-wrap: wrap; gap: 14px 30px; align-items: end; }
+.res-head p { margin: 0; color: var(--muted); }
+.breakdown { display: grid; gap: 10px; }
+.hist { display: grid; gap: 4px; font: 13px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* definitions */
+.defs-tools { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 18px; }
+.search { flex: 1 1 260px; min-width: 0; border: 1px solid var(--line); border-radius: 9px; padding: 10px 13px; background: var(--surface); font-size: 16px; }
+.lec-block { margin-bottom: 28px; }
+.lec-block h2 { font: 800 24px/1.1 var(--display); margin: 0 0 12px; display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+.lec-block h2 span { font: 700 14px var(--mono); color: var(--accent); }
+.lec-block h2 .btn { margin-left: auto; }
+.dgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.dcard { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+.dcard h3 { font: 700 16.5px/1.25 var(--display); margin: 0 0 6px; }
+.dcard p { margin: 0 0 8px; font-size: 15px; }
+.dcard .src { font: 600 11.5px var(--mono); color: var(--teal); }
+mark.hl { background: var(--hi); color: var(--hi-ink); border-radius: 2px; }
+
+footer { padding-block: 0 40px; color: var(--muted); font-size: 13px; }
+footer a { color: var(--teal); }
+
+@media (max-width: 860px) {
+  .practice { grid-template-columns: minmax(0, 1fr); }
+  .rail { position: static; order: 2; }
+  .dgrid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 640px) { nav.tabs .score { display: none; } }
+@media (max-width: 520px) {
+  header.top { padding-block: 24px 16px; }
+  .qcard { padding: 16px; }
+  .qtext { font-size: 17.5px; }
+  .opts.tf { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .bignum { font-size: 48px; }
+  .mockbar { top: calc(env(safe-area-inset-top, 0px) + 46px); }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+
+
+<header class="top wrap">
+  <div class="kicker"><span class="dots" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>Network Programming · UTM · Lecture 6</div>
+  <h1>UDP sockets <mark>Quiz</mark></h1>
+  <p class="lede">Practice questions on Lecture 6: datagrams and the UDP header, Bind / SendTo / ReceiveFrom, message boundaries and size, loss, timeouts and retries, broadcast and multicast. Many questions read the code from the Module 6 examples. Every answer links back to the slide it comes from.</p>
+  <div class="facts" id="facts"></div>
+</header>
+
+<nav class="tabs" aria-label="Sections">
+  <div class="wrap">
+    <a href="#practice" data-view="practice">Practice</a>
+    <a href="#mock" data-view="mock">Mock quiz</a>
+    <a href="#definitions" data-view="definitions">Definitions</a>
+    <span class="spacer"></span>
+    <span class="score" id="topScore"></span>
+  </div>
+</nav>
+
+<main class="wrap">
+  <section class="view" id="v-practice" aria-label="Practice"></section>
+  <section class="view" id="v-mock" aria-label="Mock quiz" hidden></section>
+  <section class="view" id="v-definitions" aria-label="Definitions" hidden></section>
+</main>
+
+<footer class="wrap">Built from the Lecture 6 slides and the code in <a href="https://github.com/Ernest96/Network_Programming_Course">Network_Programming_Course</a>. Your answers are saved in this browser only.</footer>
+
+<script id="data" type="application/json">{"lectures": {"6": "UDP sockets"}, "questions": [{"lec": 6, "ref": "L6 · slide 3 · Where we left off", "q": "The lecture compares TCP and UDP to two ways of talking. Which pair is right?", "code": null, "opts": ["TCP is a phone call; UDP is a letter.", "TCP is a letter; UDP is a phone call.", "Both are phone calls – UDP is just a faster line.", "Both are letters – TCP only adds a stamp."], "ans": 0, "why": "A phone call: you connect first, then talk in order. A letter: no connection, each one travels alone, and it can get lost.", "keep": false, "kind": "mc", "prev": null, "id": "L6-01"}, {"lec": 6, "ref": "L6 · slide 6 · What is UDP?", "q": "What does UDP send from one program to another?", "code": null, "opts": ["One message at a time – a datagram – with no connection.", "A byte stream, after a three-way handshake.", "A file, split into numbered blocks that are always resent if lost.", "Web pages only, over port 80."], "ans": 0, "why": "UDP = User Datagram Protocol: one datagram, no connection, like a letter.", "keep": false, "kind": "mc", "prev": null, "id": "L6-02"}, {"lec": 6, "ref": "L6 · slide 6 · What is UDP?", "q": "Which service from the slide uses UDP port 53?", "code": null, "opts": ["DNS – name lookup", "DHCP – network setup", "NTP – clock sync", "HTTP/3 (QUIC) – web pages"], "ans": 0, "why": "DNS 53, DHCP 67/68, NTP 123, HTTP/3 (QUIC) 443.", "keep": false, "kind": "mc", "prev": null, "id": "L6-03"}, {"lec": 6, "ref": "L6 · slide 6 · What is UDP?", "q": "Which of these runs on top of UDP, according to the slide?", "code": null, "opts": ["HTTP/3, through QUIC, on port 443", "SSH", "E-mail (SMTP)", "File transfer over FTP"], "ans": 0, "why": "SSH, e-mail and files are TCP's typical uses (slide 9). HTTP/3 uses QUIC, which builds reliability on top of UDP.", "keep": false, "kind": "mc", "prev": null, "id": "L6-04"}, {"lec": 6, "ref": "L6 · slide 6 · What is UDP?", "q": "NTP keeps computer clocks in sync. Which UDP port does it use?", "code": null, "opts": ["123", "53", "67", "443"], "ans": 0, "why": "DNS 53, DHCP 67 and 68, NTP 123, QUIC 443.", "keep": false, "kind": "mc", "prev": null, "id": "L6-05"}, {"lec": 6, "ref": "L6 · slide 7 · The UDP header: 8 bytes", "q": "How big is the UDP header?", "code": null, "opts": ["8 bytes", "20 bytes", "20+ bytes, depending on options", "2 bytes"], "ans": 0, "why": "Four fields of 2 bytes each. The 20 bytes are the IP header in front of it; TCP's header is 20+ bytes.", "keep": false, "kind": "mc", "prev": null, "id": "L6-06"}, {"lec": 6, "ref": "L6 · slide 7 · The UDP header: 8 bytes", "q": "Which four fields make up the UDP header?", "code": null, "opts": ["Source port, destination port, length, checksum", "Source IP, destination IP, length, checksum", "Source port, destination port, sequence number, acknowledgement number", "Source port, destination port, window size, flags"], "ans": 0, "why": "The IP addresses are in the IP header (which machine); the UDP header has the two ports (which program), a length and a checksum. No sequence numbers – that is why UDP does not keep order.", "keep": false, "kind": "mc", "prev": null, "id": "L6-07"}, {"lec": 6, "ref": "L6 · slide 7 · The UDP header: 8 bytes", "q": "In the packet, which part says which <strong>program<\/strong> the datagram is for, and which part says which <strong>machine<\/strong>?", "code": null, "opts": ["Program: the destination port in the UDP header. Machine: the destination IP in the IP header.", "Program: the destination IP. Machine: the destination port.", "Both are in the UDP header.", "Both are in the data – your message carries its own address."], "ans": 0, "why": "IP – which machine (the two addresses). UDP – which program (the two ports).", "keep": false, "kind": "mc", "prev": null, "id": "L6-08"}, {"lec": 6, "ref": "L6 · slide 7 · The UDP header: 8 bytes", "q": "In the IP header, which protocol number marks the packet as UDP?", "code": null, "opts": ["17", "6", "53", "8"], "ans": 0, "why": "The IP header carries “protocol 17 (UDP)”. (6 is TCP – not on the slide, but worth knowing.)", "keep": false, "kind": "mc", "prev": null, "id": "L6-09"}, {"lec": 6, "ref": "L6 · slides 7, 19 · Datagram size", "q": "Why is the largest UDP payload over IPv4 65 507 bytes?", "code": null, "opts": ["65 535 (the largest 16-bit length) minus the 20-byte IP header and the 8-byte UDP header", "It is the size of the receive buffer in .NET", "65 536 minus the 29-byte Ethernet frame", "It is a limit chosen by Windows; Linux allows more"], "ans": 0, "why": "65 535 − 20 − 8 = 65 507. Ask for more and SendTo throws SocketException MessageSize.", "keep": false, "kind": "mc", "prev": null, "id": "L6-10"}, {"lec": 6, "ref": "L6 · slide 8 · Three promises dropped, one kept", "q": "UDP drops three of TCP's promises. Which one does it <strong>keep<\/strong>?", "code": null, "opts": ["Message boundaries: one SendTo, one ReceiveFrom", "Delivery: a lost datagram is sent again", "Order: datagrams arrive in the order they were sent", "A connection: a handshake before the first byte"], "ans": 0, "why": "No connection, not reliable, no order – but the boundaries are kept. That is the “datagram” promise.", "keep": false, "kind": "mc", "prev": null, "id": "L6-11"}, {"lec": 6, "ref": "L6 · slide 8 · Three promises dropped, one kept", "q": "With UDP, the very first datagram already carries data – there is no handshake before it.", "code": null, "opts": ["True", "False"], "ans": 0, "why": "No connection, no handshake: the first datagram is already your message.", "keep": true, "kind": "tf", "prev": null, "id": "L6-12"}, {"lec": 6, "ref": "L6 · slide 8 · Three promises dropped, one kept", "q": "If a UDP datagram is lost, the operating system sends it again automatically.", "code": null, "opts": ["True", "False"], "ans": 1, "why": "A lost datagram stays lost. Nobody sends it again – unless your program does (slides 23–25).", "keep": true, "kind": "tf", "prev": null, "id": "L6-13"}, {"lec": 6, "ref": "L6 · slides 8, 22 · Three promises dropped / What can happen", "q": "The same UDP datagram can arrive twice.", "code": null, "opts": ["True", "False"], "ans": 0, "why": "Datagrams can arrive in any order – or twice. Often the copy is the result of a resend.", "keep": true, "kind": "tf", "prev": null, "id": "L6-14"}, {"lec": 6, "ref": "L6 · slide 9 · TCP or UDP?", "q": "Which row of the comparison table is wrong?", "code": null, "opts": ["Boundaries – TCP: kept, one Send is one Receive. UDP: none, a byte stream.", "Connection – TCP: a handshake first. UDP: none, just send.", "Header – TCP: 20+ bytes. UDP: 8 bytes.", "Order – TCP: kept. UDP: not kept."], "ans": 0, "why": "It is the other way round: TCP is a byte stream with no boundaries; UDP keeps them – one datagram, one message.", "keep": false, "kind": "mc", "prev": null, "id": "L6-15"}, {"lec": 6, "ref": "L6 · slide 9 · TCP or UDP?", "q": "You build an online multiplayer game that sends each player's position 30 times a second. Following the lecture, which transport fits, and why?", "code": null, "opts": ["UDP – a late position is useless anyway; the next one replaces it, so resending and waiting would only add lag.", "TCP – every position must arrive, in order, no matter how late.", "TCP – UDP cannot send more than one datagram per second.", "UDP – because UDP is always reliable on the Internet."], "ans": 0, "why": "Calls and games are UDP's typical use: fresh data matters more than complete data.", "keep": false, "kind": "mc", "prev": null, "id": "L6-16"}, {"lec": 6, "ref": "L6 · slide 9 · TCP or UDP?", "q": "Which job belongs in TCP's column of the slide, not UDP's?", "code": null, "opts": ["Downloading a file that must arrive byte for byte", "A DNS name lookup", "A voice call", "Discovering who is on the LAN with a broadcast"], "ans": 0, "why": "Typical TCP: web, e-mail, files, SSH. Typical UDP: DNS, calls, games, HTTP/3.", "keep": false, "kind": "mc", "prev": null, "id": "L6-17"}, {"lec": 6, "ref": "L6 · slide 12 · Ex01 · A UDP echo server", "q": "Which socket does a UDP program create?", "code": null, "opts": ["<code>new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp)<\/code>", "<code>new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Udp)<\/code>", "<code>new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)<\/code>", "<code>new Socket(AddressFamily.InterNetwork, SocketType.Raw, ProtocolType.Tcp)<\/code>"], "ans": 0, "why": "Dgram + Udp. Stream + Tcp was lecture 4.", "keep": false, "kind": "mc", "prev": null, "id": "L6-18"}, {"lec": 6, "ref": "L6 · slide 11 · Server and client, step by step", "q": "Which calls does a UDP <strong>server<\/strong> need, in order?", "code": null, "opts": ["new Socket(Dgram) → Bind → ReceiveFrom → SendTo → back to ReceiveFrom", "new Socket(Dgram) → Bind → Listen → Accept → Receive → Send", "new Socket(Dgram) → Connect → Send → Receive", "new Socket(Dgram) → Listen → ReceiveFrom → SendTo"], "ans": 0, "why": "No Listen, no Accept, no Connect – no handshake, no FIN.", "keep": false, "kind": "mc", "prev": null, "id": "L6-19"}, {"lec": 6, "ref": "L6 · slide 11 · Server and client, step by step", "q": "Which of these calls does a UDP server <strong>not<\/strong> make?", "code": null, "opts": ["Accept", "Bind", "ReceiveFrom", "SendTo"], "ans": 0, "why": "Accept hands out a new socket per connection – UDP has no connections, so there is nothing to accept.", "keep": false, "kind": "mc", "prev": null, "id": "L6-20"}, {"lec": 6, "ref": "L6 · slide 13 · Ex01_Client · The client side", "q": "The Ex01 client never calls <code>Bind<\/code>. Which local port does it send from?", "code": null, "opts": ["A free port picked by the OS at the first SendTo", "Port 6060, the same as the server", "Port 0 – the datagram has no source port", "It cannot send: SendTo throws until Bind is called"], "ans": 0, "why": "No Bind on the client: the first SendTo picks a free local port. The server learns it from ReceiveFrom.", "keep": false, "kind": "mc", "prev": null, "id": "L6-21"}, {"lec": 6, "ref": "L6 · slide 12 · Ex01 · A UDP echo server", "q": "In the echo server, what does <code>ref client<\/code> give you after <code>ReceiveFrom<\/code> returns?", "code": "EndPoint client = new IPEndPoint(IPAddress.Any, 0);\nint count = socket.ReceiveFrom(buffer, ref client);", "opts": ["The IP and port of whoever sent that datagram", "A new socket connected to that client", "The server's own address", "Nothing – it must be filled in before the call"], "ans": 0, "why": "ReceiveFrom waits; then client = who sent it. That address is where the server sends the reply.", "keep": false, "kind": "mc", "prev": null, "id": "L6-22"}, {"lec": 6, "ref": "L6 · slide 12 · Ex01 · A UDP echo server", "q": "The echo line is changed. What goes wrong?", "code": "// was: socket.SendTo(buffer, 0, count, SocketFlags.None, client);\nsocket.SendTo(buffer, client);", "opts": ["Every reply is 65 536 bytes: the message plus the leftover bytes of the buffer", "Nothing – SendTo stops at the first zero byte", "It does not compile: SendTo needs an offset and a count", "The reply goes to the server itself"], "ans": 0, "why": "SendTo(buffer, 0, count, ...) sends only the count bytes that arrived. Sending the whole buffer sends one huge datagram with garbage after the message.", "keep": false, "kind": "mc", "prev": null, "id": "L6-23"}, {"lec": 6, "ref": "L6 · slide 12 · Ex01 · A UDP echo server", "q": "Why is the server's buffer <code>new byte[65536]<\/code>?", "code": null, "opts": ["It is big enough for any datagram, so no message is ever cut", "UDP only works with buffers of exactly 64 KB", "So that the server can receive many datagrams in one ReceiveFrom", "It is the size of the UDP header"], "ans": 0, "why": "The largest IPv4 datagram carries 65 507 bytes; 64 KB always fits it. One ReceiveFrom still returns exactly one datagram.", "keep": false, "kind": "mc", "prev": null, "id": "L6-24"}, {"lec": 6, "ref": "L6 · slide 12 · Ex01 · A UDP echo server", "q": "Three clients talk to the echo server at the same time. How many sockets does the server use?", "code": null, "opts": ["One – the same socket receives from and replies to every client", "Three – one per client, like Accept in TCP", "Four – one listening socket plus one per client", "It cannot serve three clients without three threads"], "ans": 0, "why": "One socket serves every client. ReceiveFrom tells you who; SendTo answers them.", "keep": false, "kind": "mc", "prev": null, "id": "L6-25"}, {"lec": 6, "ref": "L6 · slide 12 · Ex01 · A UDP echo server", "q": "The echo server binds to <code>IPAddress.Loopback<\/code>, so only programs on the same computer can reach it.", "code": null, "opts": ["True", "False"], "ans": 0, "why": "127.0.0.1 is this computer only. To be reachable from the LAN, bind to the network card's IP or to IPAddress.Any (as Ex04_Discovery does).", "keep": true, "kind": "tf", "prev": null, "id": "L6-26"}, {"lec": 6, "ref": "L6 · slide 14 · Look at your UDP sockets", "q": "You run <code>netstat -ano -p udp | findstr 6060<\/code> while the echo server runs. What do you <strong>not<\/strong> see?", "code": null, "opts": ["A LISTEN or ESTABLISHED state – a UDP socket is just bound to a port", "The local address 127.0.0.1:6060", "The PID in the last column", "Any line at all – netstat cannot show UDP sockets"], "ans": 0, "why": "No LISTEN, no ESTABLISHED: there are no connections, so there are no connection states.", "keep": false, "kind": "mc", "prev": null, "id": "L6-27"}, {"lec": 6, "ref": "L6 · slide 14 · Look at your UDP sockets", "q": "Which command from the slide is a quick UDP test client on macOS?", "code": null, "opts": ["<code>nc -u 127.0.0.1 6060<\/code>", "<code>lsof -nP -iUDP:6060<\/code>", "<code>netstat -ano -p udp<\/code>", "<code>ping 127.0.0.1:6060<\/code>"], "ans": 0, "why": "nc -u: type a line, get it back from the echo server. lsof and netstat only show who uses the port.", "keep": false, "kind": "mc", "prev": null, "id": "L6-28"}, {"lec": 6, "ref": "L6 · slide 11 · Server and client, step by step", "q": "When a UDP client calls <code>Close()<\/code>, the server is told, like a TCP FIN.", "code": null, "opts": ["True", "False"], "ans": 1, "why": "No handshake, no FIN. The server never learns that the client is gone.", "keep": true, "kind": "tf", "prev": null, "id": "L6-29"}, {"lec": 6, "ref": "L6 · slide 17 · Ex02 · One SendTo is one ReceiveFrom", "q": "The client sends three datagrams. The server sleeps 500 ms, then calls ReceiveFrom three times. What does it get?", "code": "// client\nsocket.SendTo(Encoding.UTF8.GetBytes(\"HELLO\"), server);\nsocket.SendTo(Encoding.UTF8.GetBytes(\"WORLD\"), server);\nsocket.SendTo(Encoding.UTF8.GetBytes(\"BYE\"), server);", "opts": ["5 bytes “HELLO”, then 5 bytes “WORLD”, then 3 bytes “BYE”", "13 bytes “HELLOWORLDBYE” in the first call, then nothing", "Any split of the 13 bytes – it depends on timing", "Only “BYE” – each new datagram overwrites the previous one"], "ans": 0, "why": "UDP keeps boundaries: one SendTo, one ReceiveFrom – even if the server reads late. With TCP the bytes could have come out merged.", "keep": false, "kind": "mc", "prev": null, "id": "L6-30"}, {"lec": 6, "ref": "L6 · slide 17 · Ex02 · One SendTo is one ReceiveFrom", "q": "What happens when the Ex02 client calls <code>socket.SendTo(new byte[100_000], server)<\/code>?", "code": null, "opts": ["SendTo throws a SocketException: MessageSize – it does not fit in one datagram", "UDP splits it into two datagrams of 50 000 bytes", "The server receives the first 65 507 bytes and the rest is dropped silently", "It is sent like a TCP stream and the server reads it in a loop"], "ans": 0, "why": "65 507 bytes is the most one datagram can carry (IPv4). 100 000 bytes is refused at once.", "keep": false, "kind": "mc", "prev": null, "id": "L6-31"}, {"lec": 6, "ref": "L6 · slide 17 · Ex02 · One SendTo is one ReceiveFrom", "q": "The client sends one datagram of 65 507 bytes. How many ReceiveFrom calls does the server need?", "code": null, "opts": ["One – the whole datagram arrives at once", "A loop until all bytes are read, like TCP", "At least two, because the buffer holds 65 536 bytes", "None – it is too big and is never delivered"], "ans": 0, "why": "One SendTo, one ReceiveFrom – the whole datagram at once (Ex02 part 2).", "keep": false, "kind": "mc", "prev": null, "id": "L6-32"}, {"lec": 6, "ref": "L6 · slide 18 · Framing for free", "q": "A client sends one JSON request per datagram. What framing does the server need to find where one request ends?", "code": null, "opts": ["None – one ReceiveFrom returns exactly one JSON, as long as it fits in a datagram", "A newline after every JSON, like lecture 4", "A 4-byte length prefix", "A loop that reads until the closing brace"], "ans": 0, "why": "Framing for free: with UDP the datagram is the frame. With TCP (lecture 4) you add a delimiter or length prefix and read in a loop.", "keep": false, "kind": "mc", "prev": null, "id": "L6-33"}, {"lec": 6, "ref": "L6 · slide 19 · How big can a datagram be?", "q": "What size does the lecture recommend for one datagram, and why?", "code": null, "opts": ["About 1 400 bytes – bigger datagrams are cut into pieces, and one lost piece loses the whole datagram", "65 507 bytes – fewer datagrams means less loss", "Exactly 8 bytes – the size of the header", "Any size – UDP resends the lost pieces"], "ans": 0, "why": "65 507 is what is allowed; ≈ 1 400 is what you should send.", "keep": false, "kind": "mc", "prev": null, "id": "L6-34"}, {"lec": 6, "ref": "L6 · slide 19 · How big can a datagram be?", "q": "A 10 000-byte datagram is split into several pieces on the way. If one piece is lost, the receiver still gets the other pieces.", "code": null, "opts": ["True", "False"], "ans": 1, "why": "One lost piece loses them all – the datagram is delivered whole or not at all. That is why ≈ 1 400 bytes is the safe size.", "keep": true, "kind": "tf", "prev": null, "id": "L6-35"}, {"lec": 6, "ref": "L6 · slide 21 · Ex03 · 100 000 datagrams, a busy receiver", "q": "In Ex03 the client sent 100 000 datagrams and the busy server received only 257. Where were the others lost?", "code": null, "opts": ["At the receiver: its receive buffer was full while it was busy for 2 s, so new datagrams were dropped", "On the network cable between the two programs", "In the client: the OS refused to send them", "They were not lost – they arrive later, out of order"], "ans": 0, "why": "Both programs ran on loopback – no cable, and 0 were refused by the OS. The server slept 2 s, its buffer filled up, and everything after that was thrown away. No error, no warning.", "keep": false, "kind": "mc", "prev": null, "id": "L6-36"}, {"lec": 6, "ref": "L6 · slide 21 · Ex03 · 100 000 datagrams, a busy receiver", "q": "How does the Ex03 server know that the client has finished sending?", "code": "socket.ReceiveTimeout = 1000;\nwhile (true)\n{\n    try { socket.ReceiveFrom(buffer, ref client); received++; }\n    catch (SocketException ex) when (ex.SocketErrorCode == SocketError.TimedOut)\n    {\n        break;\n    }\n}", "opts": ["It does not know – it stops after 1 s of silence (ReceiveTimeout = 1000 → SocketError.TimedOut)", "The client sends a FIN when it closes", "ReceiveFrom returns 0 when the client closes", "The last datagram has a special flag in the UDP header"], "ans": 0, "why": "UDP has no FIN and no “connection closed”. The only signal is silence – a timeout.", "keep": false, "kind": "mc", "prev": null, "id": "L6-37"}, {"lec": 6, "ref": "L6 · slide 21 · Ex03_Client · 100 000 datagrams", "q": "The Ex03 client sends <code>BitConverter.GetBytes(i)<\/code>. What is that for?", "code": null, "opts": ["Each datagram carries its own number (4 bytes), so the server can count losses and see datagrams out of order", "It is the UDP checksum", "It tells the server how long the next datagram is", "It is the port the server must answer on"], "ans": 0, "why": "Number them – the first step of rebuilding reliability (slide 25). The server compares each number with the last one.", "keep": false, "kind": "mc", "prev": null, "id": "L6-38"}, {"lec": 6, "ref": "L6 · slide 21 · Ex03 · 100 000 datagrams", "q": "In the Ex03 run, 0 datagrams arrived out of order, so UDP keeps order on a real network too.", "code": null, "opts": ["True", "False"], "ans": 1, "why": "On loopback there is one path, so order happened to be kept. On a real network two datagrams can take two paths and the second comes first (slide 22).", "keep": true, "kind": "tf", "prev": null, "id": "L6-39"}, {"lec": 6, "ref": "L6 · slide 22 · What can happen to a datagram", "q": "Which of these is <strong>not<\/strong> one of the four things that can happen to a datagram on a real network?", "code": null, "opts": ["It arrives with its bytes merged into the next datagram", "It arrives once, intact, in order", "It is lost", "It arrives twice"], "ans": 0, "why": "The four cases: arrives, lost, twice, out of order. Merging never happens – boundaries are kept.", "keep": false, "kind": "mc", "prev": null, "id": "L6-40"}, {"lec": 6, "ref": "L6 · slide 22 · What can happen to a datagram", "q": "Which causes of loss does the slide list?", "code": null, "opts": ["A full buffer, weak Wi-Fi, a busy router", "A missing Listen call on the server", "Sending more than one datagram per connection", "A wrong checksum algorithm in .NET"], "ans": 0, "why": "Loss happens in the receiver (full buffer) and on the way (Wi-Fi, routers).", "keep": false, "kind": "mc", "prev": null, "id": "L6-41"}, {"lec": 6, "ref": "L6 · slide 23 · Never wait forever", "q": "Why does the client set <code>socket.ReceiveTimeout = 1000<\/code>?", "code": null, "opts": ["Without it, a lost request or reply makes ReceiveFrom wait forever", "So that the OS resends the datagram after 1 s", "It limits the datagram size to 1 000 bytes", "It closes the socket after 1 000 datagrams"], "ans": 0, "why": "1 s without a reply: treat it as lost. ReceiveFrom then throws SocketException with SocketErrorCode TimedOut.", "keep": false, "kind": "mc", "prev": null, "id": "L6-42"}, {"lec": 6, "ref": "L6 · slide 23 · Never wait forever", "q": "The request is lost every time. What does this loop do?", "code": "socket.ReceiveTimeout = 1000;\nfor (int attempt = 1; attempt <= 3 && !answered; attempt++)\n{\n    socket.SendTo(Encoding.UTF8.GetBytes(request), server);\n    try\n    {\n        int count = socket.ReceiveFrom(buffer, ref from);\n        answered = true;\n    }\n    catch (SocketException ex)   // TimedOut - send it again\n    {\n        Console.WriteLine($\"attempt {attempt}: {ex.SocketErrorCode}\");\n    }\n}", "opts": ["Sends it 3 times, waits 1 s after each, then gives up with answered still false", "Waits forever on the first ReceiveFrom", "Throws an unhandled SocketException after the first second", "Sends it once and retries the ReceiveFrom 3 times without sending again"], "ans": 0, "why": "Each attempt sends the request again, then waits up to 1 s. The catch turns the timeout into “send it again”.", "keep": false, "kind": "mc", "prev": null, "id": "L6-43"}, {"lec": 6, "ref": "L6 · slide 24 · A lost request, sent again", "q": "The request arrives, but the server's <strong>reply<\/strong> is lost. The client times out and sends again. What does the server see?", "code": null, "opts": ["The same request twice – so requests must be safe to repeat", "Nothing new – UDP removes the duplicate", "An error, because the first reply was not acknowledged", "The second request only; the first is cancelled"], "ans": 0, "why": "If the reply is lost, the server gets the request twice. “Add 100 to my balance” sent twice is a bug; “set balance to 100” is safe.", "keep": false, "kind": "mc", "prev": null, "id": "L6-44"}, {"lec": 6, "ref": "L6 · slide 24 · A lost request, sent again", "q": "Which request is safe to repeat, if the client resends it after a timeout?", "code": null, "opts": ["“What time is it?”", "“Add 1 to the vote counter”", "“Pay 50 lei to Ana”", "“Append this line to the chat log”"], "ans": 0, "why": "Reading something, or setting it to a fixed value, gives the same result twice. Adding, paying, appending happen twice.", "keep": false, "kind": "mc", "prev": null, "id": "L6-45"}, {"lec": 6, "ref": "L6 · slide 25 · Rebuilding TCP, piece by piece", "q": "To make UDP reliable you rebuild TCP piece by piece. Which three pieces?", "code": null, "opts": ["Number them, acknowledge, resend after a timeout", "Handshake, Listen, Accept", "Bigger buffers, bigger datagrams, broadcast", "Compress, encrypt, checksum"], "ans": 0, "why": "Numbers show what is missing, late or doubled; “got 17” confirms; no ack within a timeout → send again.", "keep": false, "kind": "mc", "prev": null, "id": "L6-46"}, {"lec": 6, "ref": "L6 · slide 25 · Rebuilding TCP, piece by piece", "q": "You need numbering, acknowledgements and resends for every byte. What does the lecture advise?", "code": null, "opts": ["Use TCP – or QUIC, which builds them on top of UDP", "Write them yourself on UDP for every project", "Use broadcast, so more machines receive it", "Send each datagram three times"], "ans": 0, "why": "Need all three for every byte? Use TCP – or QUIC.", "keep": false, "kind": "mc", "prev": null, "id": "L6-47"}, {"lec": 6, "ref": "L6 · slide 26 · One socket, one loop", "q": "How does a UDP server handle many clients, compared with the TCP server of lecture 4?", "code": null, "opts": ["One socket and one loop; ReceiveFrom says who sent each datagram – no Accept, no thread per client", "One listening socket plus one connected socket per client, each with its own thread", "One thread per client, each with its own UDP socket on the same port", "It cannot – UDP servers handle one client at a time"], "ans": 0, "why": "TCP: one listening socket, one connected socket per client, a thread or an await per client. UDP: one socket for everybody.", "keep": false, "kind": "mc", "prev": null, "id": "L6-48"}, {"lec": 6, "ref": "L6 · slide 28 · Who is there? Broadcast", "q": "The client sends to <code>IPAddress.Broadcast<\/code> without setting <code>EnableBroadcast<\/code>. What happens?", "code": null, "opts": ["SendTo is refused – SocketException AccessDenied", "The datagram goes only to the first machine that answers", "It is sent as unicast to 127.0.0.1", "Nothing different – EnableBroadcast is only for receivers"], "ans": 0, "why": "Broadcast must be switched on by the sender: socket.EnableBroadcast = true; without it, AccessDenied.", "keep": false, "kind": "mc", "prev": null, "id": "L6-49"}, {"lec": 6, "ref": "L6 · slide 29 · One, everyone, or a group", "q": "Match the addresses: 192.168.1.21, 255.255.255.255, 239.1.2.3.", "code": null, "opts": ["Unicast (one machine), broadcast (everyone on this network), multicast (a group)", "Broadcast, unicast, multicast", "Multicast, broadcast, unicast", "Unicast, multicast, broadcast"], "ans": 0, "why": "One machine's address; everyone on the LAN; a group in 224.0.0.0 – 239.255.255.255.", "keep": false, "kind": "mc", "prev": null, "id": "L6-50"}, {"lec": 6, "ref": "L6 · slide 29 · One, everyone, or a group", "q": "Which address range is for multicast groups?", "code": null, "opts": ["224.0.0.0 – 239.255.255.255", "192.168.0.0 – 192.168.255.255", "127.0.0.0 – 127.255.255.255", "255.0.0.0 – 255.255.255.255"], "ans": 0, "why": "The slide's group 239.1.2.3 is inside it.", "keep": false, "kind": "mc", "prev": null, "id": "L6-51"}, {"lec": 6, "ref": "L6 · slide 29 · One, everyone, or a group", "q": "A datagram is sent to multicast group 239.1.2.3. Which machines get it?", "code": null, "opts": ["Only the machines that joined the group", "Every machine on the LAN", "Exactly one machine – the first to join", "Every machine on the Internet"], "ans": 0, "why": "Broadcast: everyone on the LAN. Multicast: only the members.", "keep": false, "kind": "mc", "prev": null, "id": "L6-52"}, {"lec": 6, "ref": "L6 · slide 28 · Who is there? Broadcast", "q": "After the broadcast, why does the client set <code>ReceiveTimeout = 1000<\/code> and call ReceiveFrom in a loop?", "code": null, "opts": ["Many machines may answer, and it does not know how many – it collects answers until 1 s of silence", "To resend the broadcast every second", "Only one machine can answer a broadcast; the loop waits for it", "The timeout makes the broadcast reach the whole Internet"], "ans": 0, "why": "One question, every machine on the LAN answers. The loop ends on the first timeout: everyone has answered.", "keep": false, "kind": "mc", "prev": null, "id": "L6-53"}, {"lec": 6, "ref": "L6 · slide 28 · code: Ex04_Discovery.cs", "q": "Why does the discovery server bind to <code>IPAddress.Any<\/code> instead of its own network card's IP?", "code": null, "opts": ["A broadcast goes to 255.255.255.255; a socket bound to one specific IP never gets it", "IPAddress.Any is faster", "Binding to a specific IP is not allowed for UDP", "So that it can only receive from loopback"], "ans": 0, "why": "From the code comment: Any (0.0.0.0) – a broadcast goes to 255.255.255.255, a socket bound to one IP never gets it.", "keep": false, "kind": "mc", "prev": null, "id": "L6-54"}, {"lec": 6, "ref": "L6 · slide 28 · code: Ex04_Discovery.cs", "q": "You start the discovery server in two windows on the same computer. What makes the second Bind on port 6060 succeed?", "code": null, "opts": ["<code>SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true)<\/code> before Bind", "<code>socket.EnableBroadcast = true<\/code>", "Nothing – two UDP sockets can always share a port", "Binding the second one to port 0"], "ans": 0, "why": "ReuseAddress: several servers on one computer can bind the same port. Without it the second Bind fails because the address is in use.", "keep": false, "kind": "mc", "prev": null, "id": "L6-55"}, {"lec": 6, "ref": "L6 · slide 28 · code: Ex04_Discovery.cs", "q": "A classmate's client sends the question exactly as typed below. The discovery servers are running. What happens?", "code": "socket.SendTo(Encoding.UTF8.GetBytes(\"who is there?\"),\n              new IPEndPoint(IPAddress.Broadcast, 6060));", "opts": ["The servers print the message but nobody answers – the code compares with \"Who is there?\" and the comparison is case-sensitive", "Every server answers “I am …”", "SendTo throws AccessDenied", "The servers crash with a FormatException"], "ans": 0, "why": "Ex04_Discovery only replies if message == \"Who is there?\". A lowercase “w” is a different string, so the client just times out with 0 answers. In a protocol, the exact bytes matter.", "keep": false, "kind": "mc", "prev": null, "id": "L6-56"}, {"lec": 6, "ref": "L6 · slide 30 · Multicast: join a group", "q": "How does a receiver start getting the datagrams sent to 239.1.2.3?", "code": null, "opts": ["It binds the port, then joins: <code>SetSocketOption(SocketOptionLevel.IP, SocketOptionName.AddMembership, new MulticastOption(group))<\/code>", "It calls <code>Connect(group)<\/code>", "It sets <code>EnableBroadcast = true<\/code>", "It binds directly to 239.1.2.3 and calls Listen"], "ans": 0, "why": "Bind to Any and the port, then AddMembership. From then on, datagrams sent to the group reach this socket.", "keep": false, "kind": "mc", "prev": null, "id": "L6-57"}, {"lec": 6, "ref": "L6 · slide 30 · Multicast: join a group", "q": "What does the multicast <strong>sender<\/strong> have to do?", "code": null, "opts": ["An ordinary SendTo to the group address and port – it does not need to join", "Join the group first with AddMembership", "Set EnableBroadcast = true", "Send one copy to every member's IP"], "ans": 0, "why": "One SendTo, and every member of the group gets a copy. The network makes the copies, not the sender.", "keep": false, "kind": "mc", "prev": null, "id": "L6-58"}, {"lec": 6, "ref": "L6 · slide 30 · Multicast: join a group", "q": "With multicast, the sender calls SendTo once and every member of the group receives its own copy.", "code": null, "opts": ["True", "False"], "ans": 0, "why": "That is the whole point: one SendTo, a copy for every member – like the two windows on the slide that both get “news 1”.", "keep": true, "kind": "tf", "prev": null, "id": "L6-59"}, {"lec": 6, "ref": "L6 · slide 30 · code: Ex05_Multicast.cs, Ex05_Client", "q": "In the repo, the receiver uses <code>new MulticastOption(group, localIp)<\/code> and the sender sets <code>MulticastInterface<\/code>. Why ask for the IP of the network card?", "code": null, "opts": ["A computer can have several network cards; both sides must use the same one, or the group's datagrams go out on a card the receivers did not join on", "The group address must be the card's IP", "Multicast only works on 127.0.0.1", "To turn multicast into unicast"], "ans": 0, "why": "The code comment: join the group on that network card; send through that card – the receivers joined the group there. 127.0.0.1 keeps it on this computer only.", "keep": false, "kind": "mc", "prev": null, "id": "L6-60"}, {"lec": 6, "ref": "L6 · slide 13 · Ex01_Client · The client side", "q": "The echo server is <strong>not<\/strong> running. The client below runs. What happens?", "code": "socket.SendTo(Encoding.UTF8.GetBytes(\"hello from the client\"), server);\nint count = socket.ReceiveFrom(buffer, ref from);   // no ReceiveTimeout", "opts": ["SendTo succeeds, then ReceiveFrom waits forever (no timeout is set)", "SendTo throws ConnectionRefused at once", "ReceiveFrom returns 0 bytes", "The client gets its own message back"], "ans": 0, "why": "UDP sends without asking anyone – there is no connection to refuse. With no reply and no ReceiveTimeout the client waits forever: that is why slide 23 says “never wait forever”. (Some systems may report an ICMP error instead; you cannot count on it.)", "keep": false, "kind": "mc", "prev": null, "id": "L6-61"}, {"lec": 6, "ref": "L6 · slide 15 · Practice · UDP ping-pong LAN chat", "q": "You build the practice task: a UDP ping-pong chat between two laptops on the same LAN. Which setup works?", "code": null, "opts": ["Each side binds a known port on IPAddress.Any and sends with SendTo to the other laptop's LAN IP and port", "Each side binds IPAddress.Loopback and sends to 127.0.0.1", "One side calls Listen and the other calls Connect", "Both sides send to 239.1.2.3 without joining"], "ans": 0, "why": "Loopback stays on one computer. Listen/Connect are TCP. Multicast needs AddMembership on the receivers.", "keep": false, "kind": "mc", "prev": null, "id": "L6-62"}, {"lec": 6, "ref": "L6 · slides 12, 26 · One socket, one loop", "q": "The echo server loop is single-threaded. Two clients send at the same moment. What happens?", "code": null, "opts": ["Both datagrams wait in the socket's receive buffer; the loop answers them one after another", "The second client is refused, as with a full TCP backlog", "The two datagrams are merged into one", "The server must start a thread per client or one datagram is lost"], "ans": 0, "why": "One socket, one loop: ReceiveFrom returns one datagram at a time from the buffer. Loss only happens when the buffer is full (Ex03).", "keep": false, "kind": "mc", "prev": null, "id": "L6-63"}], "glossary": [{"lec": 6, "term": "UDP", "def_": "User Datagram Protocol: how a program sends one message (a datagram) to another program with no connection – like a letter, not a phone call.", "ref": "L6 · slides 3, 6"}, {"lec": 6, "term": "Datagram", "def_": "One self-contained UDP message. It travels alone, with its own addresses, and is delivered whole or not at all.", "ref": "L6 · slides 6, 8"}, {"lec": 6, "term": "Well-known UDP ports", "def_": "DNS 53 (name lookup), DHCP 67/68 (network setup), NTP 123 (clock sync), HTTP/3 – QUIC 443 (web pages); calls and games use the app's own port.", "ref": "L6 · slide 6"}, {"lec": 6, "term": "UDP header", "def_": "8 bytes: source port, destination port, length, checksum – 2 bytes each. The IP header in front (20 bytes) carries the IP addresses and protocol 17 (UDP).", "ref": "L6 · slide 7"}, {"lec": 6, "term": "IP vs UDP", "def_": "IP says which machine (the two addresses). UDP says which program (the two ports).", "ref": "L6 · slide 7"}, {"lec": 6, "term": "Three promises dropped, one kept", "def_": "No connection (the first datagram already carries data), not reliable (a lost datagram stays lost), no order (any order – or twice). Kept: the boundaries – one SendTo, one ReceiveFrom.", "ref": "L6 · slide 8"}, {"lec": 6, "term": "TCP vs UDP", "def_": "TCP: handshake, every byte resent if lost, order kept, a byte stream, 20+ byte header – web, e-mail, files, SSH. UDP: none, maybe, not kept, boundaries kept, 8 bytes – DNS, calls, games, HTTP/3.", "ref": "L6 · slide 9"}, {"lec": 6, "term": "Life of a UDP socket", "def_": "Server: new Socket(Dgram) → Bind → ReceiveFrom → SendTo → loop. Client: new Socket(Dgram) → SendTo → ReceiveFrom → Close. No Listen, no Accept, no Connect – no handshake, no FIN.", "ref": "L6 · slide 11"}, {"lec": 6, "term": "ReceiveFrom", "def_": "Waits for one datagram, copies it into the buffer, returns its size and fills the EndPoint (ref) with who sent it.", "ref": "L6 · slides 12, 13"}, {"lec": 6, "term": "SendTo", "def_": "Sends one datagram to the given endpoint. On a socket with no Bind, the first SendTo picks a free local port.", "ref": "L6 · slides 12, 13"}, {"lec": 6, "term": "One socket serves every client", "def_": "A UDP server needs one socket and one loop: ReceiveFrom tells you who, SendTo answers them. No Accept, no thread per client.", "ref": "L6 · slides 12, 26"}, {"lec": 6, "term": "Seeing UDP sockets", "def_": "nc -u 127.0.0.1 6060 (test client), lsof -nP -iUDP:6060, netstat -ano -p udp. No LISTEN, no ESTABLISHED: a UDP socket is just bound to a port.", "ref": "L6 · slide 14"}, {"lec": 6, "term": "Framing for free", "def_": "With TCP you add a delimiter or a length prefix and read in a loop. With UDP one SendTo is one ReceiveFrom is one message – as long as it fits in a datagram.", "ref": "L6 · slides 17, 18"}, {"lec": 6, "term": "Datagram size", "def_": "At most 65 507 bytes (IPv4); more throws SocketException MessageSize. Send about 1 400: bigger datagrams are cut into pieces and one lost piece loses them all.", "ref": "L6 · slides 17, 19"}, {"lec": 6, "term": "A busy receiver", "def_": "Ex03: 100 000 datagrams sent while the server is busy for 2 s; only 257 received, 99 743 lost – the receive buffer was full. 0 refused by the OS, 0 out of order on loopback.", "ref": "L6 · slide 21"}, {"lec": 6, "term": "What can happen to a datagram", "def_": "Arrives (usually once, intact, in order); lost (full buffer, weak Wi-Fi, busy router); twice (often after a resend); out of order (two paths, the second comes first).", "ref": "L6 · slide 22"}, {"lec": 6, "term": "ReceiveTimeout", "def_": "Never wait forever: socket.ReceiveTimeout = 1000 makes ReceiveFrom throw SocketException TimedOut after 1 s without a datagram – then send again, or stop.", "ref": "L6 · slides 21, 23"}, {"lec": 6, "term": "Safe to repeat", "def_": "If the reply is lost, the server gets the request twice. Make requests safe to repeat.", "ref": "L6 · slide 24"}, {"lec": 6, "term": "Making UDP reliable", "def_": "Number every datagram, acknowledge (“got 17”), resend if there is no acknowledgement within a timeout. Need all three for every byte? Use TCP – or QUIC, which builds them on top of UDP.", "ref": "L6 · slide 25"}, {"lec": 6, "term": "Broadcast", "def_": "One datagram to 255.255.255.255 reaches every machine on the LAN. The sender needs socket.EnableBroadcast = true (otherwise AccessDenied); receivers bind IPAddress.Any.", "ref": "L6 · slides 28, 29"}, {"lec": 6, "term": "Unicast, broadcast, multicast", "def_": "Unicast: one machine's address. Broadcast: everyone on this network. Multicast: only the machines that joined a group in 224.0.0.0 – 239.255.255.255.", "ref": "L6 · slide 29"}, {"lec": 6, "term": "Multicast", "def_": "Receivers bind the port and join with SetSocketOption(IP, AddMembership, new MulticastOption(group)); the sender does an ordinary SendTo to the group. One SendTo, a copy for every member.", "ref": "L6 · slide 30"}, {"lec": 6, "term": "ReuseAddress", "def_": "SetSocketOption(Socket, ReuseAddress, true) before Bind lets several sockets on one computer bind the same port – used to run several discovery servers or multicast receivers.", "ref": "L6 · slides 28, 30"}]}</script>
+<script>
+(function () {
+  "use strict";
+  const DATA = JSON.parse(document.getElementById("data").textContent);
+  const Qs = DATA.questions, G = DATA.glossary, LEC = DATA.lectures;
+  const LECS = Object.keys(LEC).map(Number);
+  const byId = Object.fromEntries(Qs.map(q => [q.id, q]));
+  const KEY = "np-udp-quiz-v1";
+  const $ = (s, r = document) => r.querySelector(s);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  // ---------------- state
+  const fresh = () => ({ ans: {}, lecs: LECS.slice(), src: "all", pos: 0, mock: null, hist: [], cfg: { n: 20, minutes: 20, lecs: LECS.slice() } });
+  let S = fresh();
+  try { const raw = localStorage.getItem(KEY); if (raw) S = Object.assign(fresh(), JSON.parse(raw)); } catch (e) {}
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+
+  // ---------------- option order: shuffled once per question per visit (kept for true/false and number lists)
+  const seed = Math.floor(Math.random() * 1e9);
+  const permCache = {};
+  function hash(str) { let h = 2166136261 ^ seed; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+  function perm(q) {
+    if (permCache[q.id]) return permCache[q.id];
+    const idx = q.opts.map((_, i) => i);
+    if (!q.keep) {
+      let h = hash(q.id);
+      for (let i = idx.length - 1; i > 0; i--) { h = Math.imul(h ^ (h >>> 15), 2246822507) >>> 0; const j = h % (i + 1); [idx[i], idx[j]] = [idx[j], idx[i]]; }
+    }
+    return (permCache[q.id] = idx);
+  }
+
+  // ---------------- slide references -> matching definitions
+  function parseRef(ref) {
+    const lec = +((ref.match(/L(\d)/) || [])[1] || 0), nums = new Set(), ex = new Set();
+    const m = ref.match(/slides?\s+([\d–\-,\s]+)/);
+    if (m) m[1].split(",").forEach(part => {
+      const r = part.trim().split(/[–-]/).map(Number);
+      if (r[0]) for (let k = r[0]; k <= (r[1] || r[0]); k++) nums.add(k);
+    });
+    (ref.match(/Ex\d+[a-z]?/g) || []).forEach(e => ex.add(e.replace(/[a-z]$/, "").replace(/Ex0*/, "Ex")));
+    return { lec, nums, ex };
+  }
+  G.forEach(g => g._r = parseRef(g.ref));
+  function defsFor(q) {
+    const r = parseRef(q.ref);
+    return G.filter(g => g._r.lec === r.lec && ([...r.nums].some(n => g._r.nums.has(n)) || [...r.ex].some(e => g._r.ex.has(e)))).slice(0, 2);
+  }
+
+  // ---------------- stats
+  function status(id) { if (!(id in S.ans)) return "open"; return S.ans[id] === byId[id].ans ? "ok" : "bad"; }
+  function lecStats(l) {
+    const list = Qs.filter(q => q.lec === l); let ok = 0, bad = 0;
+    list.forEach(q => { const s = status(q.id); if (s === "ok") ok++; else if (s === "bad") bad++; });
+    return { n: list.length, ok, bad };
+  }
+  function topScore() {
+    let ok = 0, done = 0; Qs.forEach(q => { const s = status(q.id); if (s !== "open") done++; if (s === "ok") ok++; });
+    $("#topScore").innerHTML = done ? `<b>${ok}</b>/${done} right · ${done} of ${Qs.length} done` : `${Qs.length} questions`;
+  }
+  $("#facts").innerHTML = [
+    [Qs.length, "questions"], [Qs.filter(q => q.code).length, "with code to read"], [Qs.filter(q => q.kind === "tf").length, "true / false"], [G.length, "definitions from the slides"]
+  ].map(([n, t]) => `<span><b>${n}</b> ${t}</span>`).join("");
+
+  // ---------------- question card
+  function optsHTML(q, chosen, reveal, name) {
+    const p = perm(q), tf = q.kind === "tf";
+    return `<div class="opts${tf ? " tf" : ""}" role="group" aria-label="Answers">` + p.map((oi, k) => {
+      let cls = "opt";
+      if (reveal) { if (oi === q.ans) cls += " right"; else if (oi === chosen) cls += " wrong"; }
+      else if (oi === chosen) cls += " picked";
+      return `<button class="${cls}" data-${name}="${q.id}" data-oi="${oi}"${reveal ? " disabled" : ""} aria-pressed="${oi === chosen}">` +
+        `<span class="k">${tf ? "" : "abcd"[k]}</span><span class="t">${q.opts[oi]}</span></button>`;
+    }).join("") + `</div>`;
+  }
+  function metaHTML(q, label) {
+    return `<div class="qmeta"><span class="id">${label}</span><span>Lecture ${q.lec} · ${esc(LEC[q.lec])}</span>` +
+      (q.prev ? `<span class="tag prev">${esc(q.prev)}</span>` : "") + (q.kind === "tf" ? `<span class="tag tf">True / false</span>` : "") + `</div>`;
+  }
+  function revealHTML(q, chosen, showVerdict = true) {
+    const ok = chosen === q.ans;
+    const right = q.kind === "tf" ? q.opts[q.ans] : `${"abcd"[perm(q).indexOf(q.ans)]}) ${q.opts[q.ans]}`;
+    let h = showVerdict ? `<div class="verdict ${ok ? "ok" : "bad"}"><strong>${ok ? "Correct." : "Not quite. Answer: " + right}</strong>${q.why}</div>` : "";
+    const defs = defsFor(q);
+    h += `<div class="ref"><div class="src">From the slides · ${esc(q.ref)}</div>` +
+      defs.map(d => `<div class="def"><b>${d.term}.</b> ${d.def_}</div>`).join("") + `</div>`;
+    return h;
+  }
+
+  // ---------------- PRACTICE
+  function filtered() {
+    return Qs.filter(q => S.lecs.includes(q.lec) && (
+      S.src === "all" || (S.src === "prev" && q.prev) || (S.src === "missed" && status(q.id) === "bad") || (S.src === "open" && status(q.id) === "open")));
+  }
+  let pList = [];
+  function renderPractice(keepList) {
+    if (!keepList) pList = filtered().map(q => q.id);
+    if (S.pos >= pList.length) S.pos = Math.max(0, pList.length - 1);
+    const V = $("#v-practice");
+    const srcOpts = [["all", "All questions"], ["open", "Not answered"], ["missed", "Missed"]];
+    const rail = `<aside class="rail"><div class="panel">
+        <div><p class="label">Lectures</p><div class="chips">${LECS.map(l => `<button class="chip" data-lec="${l}" aria-pressed="${S.lecs.includes(l)}">L${l} ${esc(LEC[l])}</button>`).join("")}</div></div>
+        <div><p class="label">Show</p><div class="chips">${srcOpts.map(([k, t]) => `<button class="chip" data-src="${k}" aria-pressed="${S.src === k}">${t}</button>`).join("")}</div></div>
+      </div>
+      <div class="panel"><div><p class="label">Your progress</p><div class="lecstat">${LECS.map(l => { const s = lecStats(l);
+        return `<div class="ls"><span class="n">L${l}</span><span class="t">${esc(LEC[l])}</span><span class="v">${s.ok}/${s.n}</span>` +
+          `<span class="bar"><i class="g" style="width:${s.ok / s.n * 100}%"></i><i class="r" style="width:${s.bad / s.n * 100}%"></i></span></div>`; }).join("")}</div></div>
+        <p class="hint">Keys: <span class="kbd">A</span>–<span class="kbd">D</span> answer, <span class="kbd">T</span>/<span class="kbd">F</span> true/false, <span class="kbd">→</span> next, <span class="kbd">←</span> back.</p>
+        <div id="resetBox"><button class="btn small" id="resetAsk">Reset my answers</button></div>
+      </div></aside>`;
+    let main;
+    if (!pList.length) {
+      main = `<div class="qcard empty">${S.src === "missed" ? "No missed questions here. Nice." : S.src === "open" ? "You answered everything in these lectures." : "Pick at least one lecture."}</div>`;
+    } else {
+      const q = byId[pList[S.pos]], has = q.id in S.ans, chosen = S.ans[q.id];
+      main = `<article class="qcard" aria-live="polite">${metaHTML(q, q.id)}<p class="qtext">${q.q}</p>` +
+        (q.code ? `<pre class="code">${esc(q.code)}</pre>` : "") + optsHTML(q, chosen, has, "p") +
+        (has ? revealHTML(q, chosen) : "") +
+        `<div class="qnav"><button class="btn" id="prevQ"${S.pos === 0 ? " disabled" : ""}>← Back</button>` +
+        `<button class="btn ${has ? "lime" : ""}" id="nextQ"${S.pos >= pList.length - 1 ? " disabled" : ""}>${has ? "Next question →" : "Skip →"}</button>` +
+        (has ? `<button class="btn small" id="retryQ">Try again</button>` : "") +
+        `<span class="pos">${S.pos + 1} / ${pList.length}</span></div></article>` +
+        `<div class="grid-nav"><p class="label">Jump to a question</p><div class="cells">` +
+        pList.map((id, i) => { const s = status(id); return `<button class="cell ${s === "open" ? "" : s}${i === S.pos ? " cur" : ""}${byId[id].prev ? " p" : ""}" data-jump="${i}" aria-label="Question ${i + 1}, ${s === "ok" ? "right" : s === "bad" ? "wrong" : "not answered"}">${i + 1}</button>`; }).join("") +
+        `</div><div class="legend"><span><i style="background:var(--ok);border-color:var(--ok)"></i>right</span><span><i style="background:var(--bad);border-color:var(--bad)"></i>wrong</span><span><i></i>not answered</span></div></div>`;
+    }
+    V.innerHTML = `<div class="practice">${rail}<div>${main}</div></div>`;
+    topScore();
+  }
+
+  // ---------------- MOCK MIDTERM
+  let tick = null;
+  function pickMock(n, lecs) {
+    const pools = lecs.map(l => Qs.filter(q => q.lec === l).map(q => q.id).sort(() => Math.random() - 0.5));
+    const total = pools.reduce((a, p) => a + p.length, 0);
+    n = Math.min(n, total);
+    let take = pools.map(p => Math.floor(n * p.length / total));
+    let left = n - take.reduce((a, b) => a + b, 0), i = 0;
+    while (left > 0) { if (take[i % take.length] < pools[i % take.length].length) { take[i % take.length]++; left--; } i++; }
+    return pools.flatMap((p, k) => p.slice(0, take[k]));
+  }
+  function renderMock() {
+    clearInterval(tick);
+    const V = $("#v-mock"), M = S.mock;
+    if (!M) { V.innerHTML = setupHTML(); return; }
+    if (M.done) { V.innerHTML = resultsHTML(); return; }
+    let lastLec = 0, num = 0;
+    const items = M.ids.map(id => {
+      const q = byId[id]; num++;
+      const head = q.lec !== lastLec ? `<h2 class="sect"><span>L${q.lec}</span>${esc(LEC[q.lec])}</h2>` : "";
+      lastLec = q.lec;
+      return head + `<article class="qcard" id="m-${id}">${metaHTML(q, "Question " + num)}<p class="qtext">${q.q}</p>` +
+        (q.code ? `<pre class="code">${esc(q.code)}</pre>` : "") + optsHTML(q, M.ans[id], false, "m") + `</article>`;
+    }).join("");
+    V.innerHTML = `<div class="mockbar"><span class="timer" id="timer" aria-label="Time left"></span>` +
+      `<span class="prog" id="mprog"></span><span class="grow"></span>` +
+      `<span id="submitBox"><button class="btn small" id="quitMock">Quit</button> <button class="btn primary" id="submitAsk">Submit quiz</button></span></div>` +
+      `<div class="mock-list">${items}</div>`;
+    updateMockBar();
+    if (M.minutes) { tick = setInterval(updateMockBar, 1000); }
+  }
+  function updateMockBar() {
+    const M = S.mock; if (!M || M.done) return;
+    const answered = M.ids.filter(id => id in M.ans).length;
+    const p = $("#mprog"); if (p) p.textContent = `${answered} / ${M.ids.length} answered`;
+    const t = $("#timer"); if (!t) return;
+    if (!M.minutes) { t.textContent = "No time limit"; t.style.fontSize = "15px"; return; }
+    const left = Math.max(0, Math.round((M.start + M.minutes * 60000 - Date.now()) / 1000));
+    t.textContent = `${String(Math.floor(left / 60)).padStart(2, "0")}:${String(left % 60).padStart(2, "0")}`;
+    t.classList.toggle("low", left < 120);
+    if (left === 0) finishMock();
+  }
+  function finishMock() {
+    const M = S.mock; clearInterval(tick);
+    M.done = true; M.end = Date.now();
+    const score = M.ids.filter(id => M.ans[id] === byId[id].ans).length;
+    S.hist.unshift({ at: M.end, score, n: M.ids.length, lecs: M.lecs });
+    S.hist = S.hist.slice(0, 8);
+    save(); renderMock(); window.scrollTo(0, 0);
+  }
+  function setupHTML() {
+    const C = S.cfg;
+    const pool = Qs.filter(q => C.lecs.includes(q.lec)).length;
+    return `<div class="setup"><div><h2>Mock quiz</h2><p class="intro">A random set of UDP questions, like a real quiz. You see no answers until you submit. Then you get your score and a full review with the slide references.</p></div>
+      <div class="panel" style="display:grid;gap:18px">
+        <div><p class="label">Lectures</p><div class="chips">${LECS.map(l => `<button class="chip" data-mlec="${l}" aria-pressed="${C.lecs.includes(l)}">L${l} ${esc(LEC[l])}</button>`).join("")}</div></div>
+        <div><p class="label">Questions</p><div class="chips">${[10, 15, 20, 30].map(n => `<button class="chip" data-mn="${n}" aria-pressed="${C.n === n}">${n}</button>`).join("")}</div></div>
+        <div><p class="label">Time limit</p><div class="chips">${[[0, "None"], [10, "10 min"], [15, "15 min"], [20, "20 min"], [30, "30 min"]].map(([m, t]) => `<button class="chip" data-mm="${m}" aria-pressed="${C.minutes === m}">${t}</button>`).join("")}</div></div>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button class="btn lime" id="startMock"${C.lecs.length ? "" : " disabled"}>Start the quiz</button><span class="hint">${Math.min(C.n, pool)} questions from a pool of ${pool}</span></div>
+      </div>
+      ${S.hist.length ? `<div><p class="label">Your last attempts</p><div class="hist">${S.hist.map(h => `<span>${new Date(h.at).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })} · ${h.score}/${h.n} (${Math.round(h.score / h.n * 100)}%) · L${h.lecs.join(", L")}</span>`).join("")}</div></div>` : ""}
+    </div>`;
+  }
+  let onlyWrong = false;
+  function resultsHTML() {
+    const M = S.mock, n = M.ids.length;
+    const score = M.ids.filter(id => M.ans[id] === byId[id].ans).length, pct = Math.round(score / n * 100);
+    const mins = Math.max(1, Math.round((M.end - M.start) / 60000));
+    const per = M.lecs.map(l => { const ids = M.ids.filter(id => byId[id].lec === l); const ok = ids.filter(id => M.ans[id] === byId[id].ans).length; return { l, ok, n: ids.length }; }).filter(x => x.n);
+    const weakest = per.slice().sort((a, b) => a.ok / a.n - b.ok / b.n)[0];
+    let num = 0;
+    const review = M.ids.map(id => {
+      num++; const q = byId[id], ch = M.ans[id], ok = ch === q.ans;
+      if (onlyWrong && ok) return "";
+      return `<article class="qcard">${metaHTML(q, "Question " + num + (ch === undefined ? " · not answered" : ""))}<p class="qtext">${q.q}</p>` +
+        (q.code ? `<pre class="code">${esc(q.code)}</pre>` : "") + optsHTML(q, ch, true, "r") + revealHTML(q, ch) + `</article>`;
+    }).join("");
+    return `<div class="res"><div class="panel" style="display:grid;gap:16px"><h2>Your result</h2>
+      <div class="res-head"><div class="bignum">${score}<small> / ${n}</small></div><p>${pct}% · ${mins} min${per.length > 1 && weakest && weakest.ok < weakest.n ? ` · review Lecture ${weakest.l} first (${weakest.ok}/${weakest.n})` : ""}</p></div>
+      <div class="breakdown lecstat">${per.map(x => `<div class="ls"><span class="n">L${x.l}</span><span class="t">${esc(LEC[x.l])}</span><span class="v">${x.ok}/${x.n}</span><span class="bar"><i class="g" style="width:${x.ok / x.n * 100}%"></i><i class="r" style="width:${(x.n - x.ok) / x.n * 100}%"></i></span></div>`).join("")}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn lime" id="newMock">New quiz</button><button class="btn" id="toggleWrong" aria-pressed="${onlyWrong}">${onlyWrong ? "Show all questions" : "Show only mistakes"}</button></div></div>
+      <h2 class="sect">Review</h2><div class="mock-list">${review || '<div class="qcard empty">No mistakes. Well done.</div>'}</div></div>`;
+  }
+
+  // ---------------- DEFINITIONS
+  function renderDefs() {
+    const V = $("#v-definitions");
+    if (!V.dataset.built) {
+      V.innerHTML = `<div class="defs-tools"><label class="sr" for="defSearch">Search definitions</label><input class="search" id="defSearch" type="search" placeholder="Search: ReceiveFrom, broadcast, timeout, 65 507…" autocomplete="off">` +
+        `<div class="chips" id="defLecs">${LECS.map(l => `<button class="chip" data-dlec="${l}" aria-pressed="true">L${l}</button>`).join("")}</div></div><div id="defList"></div>`;
+      V.dataset.built = "1";
+    }
+    drawDefs();
+  }
+  function drawDefs() {
+    const term = ($("#defSearch").value || "").trim().toLowerCase();
+    const on = [...document.querySelectorAll("[data-dlec]")].filter(b => b.getAttribute("aria-pressed") === "true").map(b => +b.dataset.dlec);
+    const strip = s => s.replace(/<[^>]+>/g, "").toLowerCase();
+    const hl = s => term ? s.replace(new RegExp("(" + term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")(?![^<]*>)", "gi"), '<mark class="hl">$1</mark>') : s;
+    let out = "";
+    LECS.filter(l => on.includes(l)).forEach(l => {
+      const list = G.filter(g => g.lec === l && (!term || strip(g.term + " " + g.def_).includes(term)));
+      if (!list.length) return;
+      out += `<section class="lec-block"><h2><span>L${l}</span>${esc(LEC[l])}<button class="btn small" data-quiz="${l}">Practice Lecture ${l}</button></h2><div class="dgrid">` +
+        list.map(g => `<div class="dcard"><h3>${hl(g.term)}</h3><p>${hl(g.def_)}</p><div class="src">${esc(g.ref)}</div></div>`).join("") + `</div></section>`;
+    });
+    $("#defList").innerHTML = out || `<div class="empty">Nothing matches “${esc(term)}”.</div>`;
+  }
+
+  // ---------------- routing
+  const views = ["practice", "mock", "definitions"];
+  function route() {
+    const v = views.includes(location.hash.slice(1)) ? location.hash.slice(1) : "practice";
+    views.forEach(x => { $("#v-" + x).hidden = x !== v; });
+    document.querySelectorAll("nav.tabs a").forEach(a => a.setAttribute("aria-current", a.dataset.view === v ? "page" : "false"));
+    if (v === "practice") renderPractice(); else if (v === "mock") renderMock(); else renderDefs();
+    topScore();
+  }
+  window.addEventListener("hashchange", route);
+
+  // ---------------- events
+  function answerPractice(id, oi) {
+    if (id in S.ans) return;
+    S.ans[id] = oi; save(); renderPractice(true);
+  }
+  document.addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    const d = b.dataset;
+    // practice
+    if (d.p) return answerPractice(d.p, +d.oi);
+    if (d.lec) { const l = +d.lec; S.lecs = S.lecs.includes(l) ? S.lecs.filter(x => x !== l) : [...S.lecs, l].sort(); S.pos = 0; save(); return renderPractice(); }
+    if (d.src) { S.src = d.src; S.pos = 0; save(); return renderPractice(); }
+    if (d.jump) { S.pos = +d.jump; save(); renderPractice(true); return $(".qcard").scrollIntoView({ block: "nearest" }); }
+    if (b.id === "nextQ") { S.pos++; save(); renderPractice(true); return $(".qcard").scrollIntoView({ block: "nearest" }); }
+    if (b.id === "prevQ") { S.pos--; save(); return renderPractice(true); }
+    if (b.id === "retryQ") { delete S.ans[pList[S.pos]]; delete permCache[pList[S.pos]]; save(); return renderPractice(true); }
+    if (b.id === "resetAsk") { $("#resetBox").innerHTML = `<div class="confirm">Clear every practice answer? <button class="btn small primary" id="resetYes">Clear</button><button class="btn small" id="resetNo">Keep</button></div>`; return; }
+    if (b.id === "resetNo") return renderPractice(true);
+    if (b.id === "resetYes") { S.ans = {}; S.pos = 0; save(); return renderPractice(); }
+    // mock setup
+    if (d.mlec) { const l = +d.mlec, C = S.cfg; C.lecs = C.lecs.includes(l) ? C.lecs.filter(x => x !== l) : [...C.lecs, l].sort(); save(); return renderMock(); }
+    if (d.mn) { S.cfg.n = +d.mn; save(); return renderMock(); }
+    if (d.mm !== undefined) { S.cfg.minutes = +d.mm; save(); return renderMock(); }
+    if (b.id === "startMock") { const C = S.cfg; S.mock = { ids: pickMock(C.n, C.lecs), ans: {}, start: Date.now(), minutes: C.minutes, lecs: C.lecs.slice(), done: false }; onlyWrong = false; save(); renderMock(); return window.scrollTo(0, 0); }
+    if (d.m) { S.mock.ans[d.m] = +d.oi; save();
+      const card = document.getElementById("m-" + d.m), q = byId[d.m];
+      card.querySelector(".opts").outerHTML = optsHTML(q, S.mock.ans[d.m], false, "m"); return updateMockBar(); }
+    if (b.id === "submitAsk") {
+      const left = S.mock.ids.filter(id => !(id in S.mock.ans)).length;
+      if (!left) return finishMock();
+      $("#submitBox").innerHTML = `<span class="confirm">${left} not answered – they count as wrong. <button class="btn small primary" id="submitYes">Submit anyway</button><button class="btn small" id="submitNo">Keep going</button></span>`; return;
+    }
+    if (b.id === "submitYes") return finishMock();
+    if (b.id === "submitNo") { $("#submitBox").innerHTML = `<button class="btn small" id="quitMock">Quit</button> <button class="btn primary" id="submitAsk">Submit quiz</button>`; return; }
+    if (b.id === "quitMock") { $("#submitBox").innerHTML = `<span class="confirm">Quit without a score? <button class="btn small primary" id="quitYes">Quit</button><button class="btn small" id="submitNo">Keep going</button></span>`; return; }
+    if (b.id === "quitYes" || b.id === "newMock") { S.mock = null; save(); renderMock(); return window.scrollTo(0, 0); }
+    if (b.id === "toggleWrong") { onlyWrong = !onlyWrong; return renderMock(); }
+    // definitions
+    if (d.dlec) { b.setAttribute("aria-pressed", b.getAttribute("aria-pressed") === "true" ? "false" : "true"); return drawDefs(); }
+    if (d.quiz) { S.lecs = [+d.quiz]; S.src = "all"; S.pos = 0; save(); location.hash = "practice"; return; }
+  });
+  document.addEventListener("input", e => { if (e.target.id === "defSearch") drawDefs(); });
+  document.addEventListener("keydown", e => {
+    if ($("#v-practice").hidden || e.target.matches("input, textarea, select") || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (!pList.length) return;
+    const q = byId[pList[S.pos]], k = e.key.toLowerCase();
+    if (e.key === "ArrowRight" && S.pos < pList.length - 1) { S.pos++; save(); renderPractice(true); }
+    else if (e.key === "ArrowLeft" && S.pos > 0) { S.pos--; save(); renderPractice(true); }
+    else if (!(q.id in S.ans)) {
+      if (q.kind === "tf" && (k === "t" || k === "f")) answerPractice(q.id, k === "t" ? 0 : 1);
+      else if (q.kind !== "tf" && "abcd".includes(k) && k.length === 1) answerPractice(q.id, perm(q)["abcd".indexOf(k)]);
+      else if (q.kind !== "tf" && "1234".includes(k) && k.length === 1) answerPractice(q.id, perm(q)[+k - 1]);
+    }
+  });
+
+  route();
+})();
+</script>
+
+</body>
+</html>
